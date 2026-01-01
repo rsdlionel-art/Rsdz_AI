@@ -1,11 +1,451 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <title>Rsd Lionel Test</title>
-  </head>
-  <body style="background:#ffeb3b;">
-    <h1>Rsd Lionel is Online</h1>
-    <p>If you see this, the site works.</p>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rsd Lionel - Naija Chatbot</title>
+
+  <!-- Simple PWA-style manifest (inline) -->
+  <link
+    rel="manifest"
+    href='data:application/json,{"name":"Rsd Lionel Naija","short_name":"RsdLionel","start_url":"/","display":"standalone","background_color":"#FF3F00","theme_color":"#FF6A00"}'
+  />
+  <meta name="theme-color" content="#FF6A00" />
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #ff6a00, #ff9a00, #ffd700);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #000;
+    }
+    #chat-container {
+      width: 95%;
+      max-width: 520px;
+      height: 92vh;
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 28px;
+      box-shadow: 0 26px 60px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+    #header {
+      background: linear-gradient(135deg, #ff6a00, #ff4500);
+      color: #fff;
+      padding: 22px 18px;
+      text-align: center;
+      border-radius: 28px 28px 0 0;
+    }
+    #header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+    #header p {
+      margin: 4px 0 0;
+      font-size: 0.85rem;
+      opacity: 0.9;
+    }
+    #chat-messages {
+      flex: 1;
+      padding: 18px;
+      overflow-y: auto;
+      background: #fffdf5;
+    }
+    .message {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      max-width: 80%;
+      word-wrap: break-word;
+      font-size: 0.9rem;
+    }
+    .bot {
+      background: linear-gradient(135deg, #90ee90, #32cd32);
+      color: #000;
+      font-weight: 500;
+    }
+    .user {
+      background: linear-gradient(135deg, #00bfff, #1e90ff);
+      color: #fff;
+      margin-left: auto;
+    }
+    #input-area {
+      border-top: 2px dashed #ff6a00;
+      padding: 10px 12px 14px;
+      background: #fffaf0;
+    }
+    #top-input-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    #media-btn {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border-radius: 20px;
+      border: 2px dashed #ff6a00;
+      background: #ffffff;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    #voice-btn {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border-radius: 20px;
+      border: 0;
+      background: #ff9800;
+      color: #fff;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    #bottom-input-row {
+      display: flex;
+      gap: 8px;
+    }
+    #user-input {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 22px;
+      border: 2px solid #ff6a00;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #send-btn {
+      padding: 10px 16px;
+      border-radius: 22px;
+      border: none;
+      background: linear-gradient(135deg, #ff6a00, #ff4500);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    #share-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      border-radius: 999px;
+      border: none;
+      padding: 6px 10px;
+      background: #25d366;
+      color: #fff;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    #lang-hint {
+      font-size: 0.75rem;
+      color: #555;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="chat-container">
+    <button id="share-btn" type="button">Share 💬</button>
+
+    <div id="header">
+      <h1>Rsd Lionel Naija Bot 🇳🇬😎</h1>
+      <p>Your caring Pidgin AI paddy – gist, advice, cruise & more.</p>
+    </div>
+
+    <div id="chat-messages"></div>
+
+    <div id="input-area">
+      <div id="lang-hint">
+        Tip: for language mix you can say something like
+        <strong>"Pidgin 90 English 10"</strong> later.
+      </div>
+
+      <div id="top-input-row">
+        <button id="media-btn" type="button">🎤 / 📸 / 🎥 (max 40MB)</button>
+        <button id="voice-btn" type="button">🎙️ Voice</button>
+      </div>
+
+      <div id="bottom-input-row">
+        <input
+          id="user-input"
+          type="text"
+          placeholder="Yarn your mind here..."
+        />
+        <button id="send-btn" type="button">Send 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Basic state
+    const messagesEl = document.getElementById("chat-messages");
+    const userInputEl = document.getElementById("user-input");
+
+    let userName = localStorage.getItem("rsd_name") || null;
+    let rels = JSON.parse(localStorage.getItem("rsd_rels") || "[]");
+    let langMix =
+      JSON.parse(localStorage.getItem("rsd_langMix") || "null") || {
+        pidgin: 90,
+        english: 10,
+        yoruba: 0,
+        hausa: 0,
+        igbo: 0,
+      };
+    let lastCareIndex = Number(localStorage.getItem("rsd_lastCare") || "0");
+    let messageCount = 0;
+
+    const REL_LIST = [
+      "Mutual friends yarn",
+      "Advice partners",
+      "Sports",
+      "Creator insights",
+      "Funny jokes & Pablo lifestyle",
+      "Money making guides",
+      "Naija events",
+      "Food & jollof",
+      "Relationship advice (light)",
+      "Sexual talks (light only)",
+      "Pidgin poetry",
+      "Nollywood gist",
+      "Tech & betting",
+      "Travel Naija",
+      "Fashion & owambe",
+      "Gospel vibes",
+      "Politics shade (light)",
+      "Dancehall",
+      "Business networking",
+      "Daily motivation",
+    ];
+
+    // Initial messages
+    function addBot(text) {
+      const div = document.createElement("div");
+      div.className = "message bot";
+      div.innerHTML = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      messageCount++;
+      localStorage.setItem("rsd_messages", messagesEl.innerHTML);
+    }
+    function addUser(text) {
+      const div = document.createElement("div");
+      div.className = "message user";
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      messageCount++;
+      localStorage.setItem("rsd_messages", messagesEl.innerHTML);
+    }
+
+    // Load history
+    const saved = localStorage.getItem("rsd_messages");
+    if (saved) {
+      messagesEl.innerHTML = saved;
+    } else {
+      addBot(
+        "Omo! Welcome to <b>Rsd Lionel</b>, your Naija AI family paddy. 🇳🇬😍<br><br>" +
+          "Abeg tell me your name and what you want, like:<br>" +
+          "<i>“My name na Tunde. I pick 1,3,5. Pidgin 90 English 10.”</i><br><br>" +
+          "Relationships (pick up to 15 numbers):<br>" +
+          REL_LIST.map((r, i) => (i + 1) + ". " + r).join("<br>")
+      );
+    }
+
+    function parseLangMix(text) {
+      const base = { pidgin: 90, english: 10, yoruba: 0, hausa: 0, igbo: 0 };
+      const matches = text.toLowerCase().match(/(pidgin|english|yoruba|hausa|igbo)s+(d+)/g);
+      if (!matches) return base;
+      matches.forEach((m) => {
+        const parts = m.trim().split(/s+/);
+        const lang = parts[0];
+        const pct = parseInt(parts[1], 10);
+        if (!isNaN(pct) && base[lang] !== undefined) {
+          base[lang] = Math.max(0, Math.min(100, pct));
+        }
+      });
+      const total = base.pidgin + base.english + base.yoruba + base.hausa + base.igbo;
+      if (total !== 100) {
+        base.english = Math.max(0, 100 - (base.pidgin + base.yoruba + base.hausa + base.igbo));
+      }
+      return base;
+    }
+
+    function weaveLang(text) {
+      const r = Math.random() * 100;
+      let cumulative = langMix.pidgin;
+      if (r < cumulative) {
+        return `Oga ${userName || "paddy"}, ${text}`;
+      }
+      cumulative += langMix.english;
+      if (r < cumulative) {
+        return `Hey ${userName || "friend"}, ${text}`;
+      }
+      cumulative += langMix.yoruba;
+      if (r < cumulative) {
+        return `Ẹ kaaro ${userName || ""}! ${text}`;
+      }
+      cumulative += langMix.hausa;
+      if (r < cumulative) {
+        return `Ina kwana ${userName || ""}! ${text}`;
+      }
+      // igbo or fallback
+      return `Kedu ${userName || ""}! ${text}`;
+    }
+
+    function caringCheck() {
+      if (messageCount - lastCareIndex >= 6) {
+        lastCareIndex = messageCount;
+        localStorage.setItem("rsd_lastCare", String(lastCareIndex));
+        addBot(
+          weaveLang(
+            "how body today? You dey okay? Any small wahala we fit reason together like family? ❤️"
+          )
+        );
+      }
+    }
+
+    function processInput(raw) {
+      const text = raw.trim();
+      if (!text) return;
+
+      // On first run, try to extract name, rels, lang
+      if (!userName || rels.length === 0) {
+        const lower = text.toLowerCase();
+
+        // name
+        if (!userName && lower.includes("name")) {
+          const after = text.split(/name/i)[1] || "";
+          userName = after.replace(/[:=]/, "").trim().split(/s+/)[0] || "Paddy";
+          localStorage.setItem("rsd_name", userName);
+        }
+
+        // relationships numbers
+        const nums = text.match(/d+/g);
+        if (nums) {
+          const picked = [];
+          nums.forEach((nStr) => {
+            const n = parseInt(nStr, 10);
+            if (n >= 1 && n <= REL_LIST.length && picked.length < 15) {
+              picked.push(REL_LIST[n - 1]);
+            }
+          });
+          if (picked.length > 0) {
+            rels = picked;
+            localStorage.setItem("rsd_rels", JSON.stringify(rels));
+          }
+        }
+
+        // language mix
+        langMix = parseLangMix(text);
+        localStorage.setItem("rsd_langMix", JSON.stringify(langMix));
+
+        addBot(
+          weaveLang(
+            `nice one! Your name: ${userName || "–"}, relationships: ${
+              rels.length ? rels.join(", ") : "none yet"
+            }. Language mix – Pidgin ${langMix.pidgin}%, English ${langMix.english}% and small tribe flavour. Wetin you wan yarn first? 😎`
+          )
+        );
+        return;
+      }
+
+      // Normal chat
+      let reply = "";
+
+      const lower = text.toLowerCase();
+
+      if (lower.includes("jollof") || lower.includes("food")) {
+        reply = "this jollof matter ehn, Naija version still top table pass any other. 🍛😂";
+      } else if (lower.includes("money") || lower.includes("hustle")) {
+        reply =
+          "for money matter, start small & consistent: online services, mini–importation, content creation, or remote gigs. No rush, just steady movement. 💸";
+      } else if (lower.includes("sad") || lower.includes("depressed") || lower.includes("down")) {
+        reply =
+          "sorry you dey feel that way. Take small break, breathe, talk to trusted person if you fit. You no dey alone at all. 🤍";
+      } else if (lower.includes("sport") || lower.includes("ball") || lower.includes("football")) {
+        reply =
+          "for ball gist, Super Eagles and league wahala no dey ever finish. Which club be your own? ⚽";
+      } else {
+        reply =
+          "I don reason your message. E make sense die. Gist me more so I fit follow you well. 😄";
+      }
+
+      addBot(weaveLang(reply));
+      caringCheck();
+    }
+
+    // Events
+    document.getElementById("send-btn").onclick = () => {
+      const text = userInputEl.value;
+      if (!text.trim()) return;
+      addUser(text);
+      userInputEl.value = "";
+      processInput(text);
+    };
+    userInputEl.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        document.getElementById("send-btn").click();
+      }
+    });
+
+    document.getElementById("share-btn").onclick = () => {
+      const url = window.location.href;
+      const text =
+        "Chat with Rsd Lionel Naija Bot 😎🇳🇬 – gist, advice & cruise: " + url;
+      window.open(
+        "https://wa.me/?text=" + encodeURIComponent(text),
+        "_blank"
+      );
+    };
+
+    // Simple media handler (size check only)
+    document.getElementById("media-btn").onclick = () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*,video/*,audio/*";
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 40 * 1024 * 1024) {
+          addBot("this file big pass 40MB o, abeg try compress am small. 😅");
+          return;
+        }
+        const kind = file.type.startsWith("image")
+          ? "picture"
+          : file.type.startsWith("video")
+          ? "video"
+          : "audio";
+        addBot(
+          weaveLang(
+            `I don see your ${kind}. E sure for you! Tell me wetin you want make we talk about am. 📎`
+          )
+        );
+      };
+      input.click();
+    };
+
+    // Simple voice input (if supported)
+    document.getElementById("voice-btn").onclick = () => {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Voice recognition no dey available for this browser.");
+        return;
+      }
+      const rec = new SpeechRecognition();
+      rec.lang = "en-NG";
+      rec.onresult = (e) => {
+        const text = e.results[0][0].transcript;
+        userInputEl.value = text;
+        addUser(text);
+        processInput(text);
+      };
+      rec.start();
+    };
+  </script>
+</body>
 </html>
